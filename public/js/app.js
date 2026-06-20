@@ -632,6 +632,7 @@
   const defaultsSiteName = document.getElementById('defaults-site-name');
   const defaultsTemplates= document.getElementById('defaults-templates');
   const btnAddTemplate   = document.getElementById('btn-add-template');
+  const btnAddSitewide   = document.getElementById('btn-add-sitewide');
   const btnSaveDefaults  = document.getElementById('btn-save-defaults');
   const defaultsStatus   = document.getElementById('defaults-status');
   let defaultsSiteId = null;
@@ -653,9 +654,20 @@
 
   function renderDefaultsTemplates(defs) {
     defaultsTemplates.innerHTML = '';
-    for (const [folder, fields] of Object.entries(defs)) {
-      defaultsTemplates.appendChild(buildTemplateSection(folder, fields));
+    const entries = Object.entries(defs);
+    if (entries.length === 0) {
+      // Start with an empty site-wide section so users see where to add fields
+      defaultsTemplates.appendChild(buildTemplateSection('', {}));
+    } else {
+      for (const [folder, fields] of entries) {
+        defaultsTemplates.appendChild(buildTemplateSection(folder, fields));
+      }
     }
+  }
+
+  function hasSiteWide() {
+    return Array.from(defaultsTemplates.querySelectorAll('.defaults-folder-input'))
+      .some(inp => inp.value === '');
   }
 
   function buildTemplateSection(folder, fields) {
@@ -781,6 +793,14 @@
     const newSection = defaultsTemplates.lastElementChild;
     const inp = newSection.querySelector('.defaults-folder-input[type="text"]');
     if (inp) { inp.focus(); inp.select(); }
+  });
+
+  btnAddSitewide.addEventListener('click', () => {
+    if (hasSiteWide()) {
+      toast('Site-wide rule already exists', 'warn');
+      return;
+    }
+    defaultsTemplates.insertBefore(buildTemplateSection('', {}), defaultsTemplates.firstChild);
   });
 
   btnSaveDefaults.addEventListener('click', async () => {

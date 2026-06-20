@@ -217,7 +217,10 @@
           Fields defined here auto-populate when opening or creating files. Folder rules override site-wide rules; existing file values are never overwritten.
         </p>
         <div id="defaults-templates"></div>
-        <button class="btn btn-ghost btn-sm" id="btn-add-template">+ Add folder rule</button>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" id="btn-add-sitewide">+ Site-wide rule</button>
+          <button class="btn btn-ghost btn-sm" id="btn-add-template">+ Folder rule</button>
+        </div>
         <div style="display:flex;align-items:center;gap:12px;padding-top:8px;border-top:1px solid var(--border);margin-top:4px">
           <button class="btn btn-primary btn-sm" id="btn-save-defaults">Save defaults</button>
           <span id="defaults-status" style="font-size:12px;color:var(--text-muted)"></span>
