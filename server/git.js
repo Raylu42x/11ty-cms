@@ -40,6 +40,7 @@ async function getStatus(siteId) {
   return {
     modified: st.modified,
     created: st.created,
+    not_added: st.not_added,
     deleted: st.deleted,
     staged: st.staged,
     lastCommit: log.latest

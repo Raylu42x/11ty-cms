@@ -59,7 +59,7 @@
     if (!currentSite) return;
     try {
       const st = await API.get(`/api/sites/${currentSite.id}/status`);
-      const n = (st.modified?.length || 0) + (st.created?.length || 0) + (st.deleted?.length || 0);
+      const n = (st.modified?.length || 0) + (st.created?.length || 0) + (st.not_added?.length || 0) + (st.deleted?.length || 0);
       if (n > 0) {
         statusBadge.textContent = `${n} unpublished`;
         statusBadge.className = 'status-badge warn';
@@ -285,9 +285,11 @@
       });
       closeNewFileModal();
       const files = await API.get(`/api/sites/${currentSite.id}/files`);
+      allFiles = files;
       fileBrowser.render(files);
       fileBrowser.setActive(p);
       openFile(p);
+      refreshStatus();
     } catch (err) {
       newFileError.textContent = err.message;
     }
