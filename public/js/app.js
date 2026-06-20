@@ -676,14 +676,19 @@
       hidden.value = '';
       section.appendChild(hidden);
     } else {
+      const prefix = document.createElement('span');
+      prefix.textContent = 'Folder:';
+      prefix.style.cssText = 'color:var(--text-muted);font-size:11px;white-space:nowrap;';
       const inp = document.createElement('input');
       inp.type = 'text';
       inp.className = 'defaults-folder-input';
       inp.value = folder;
       inp.placeholder = 'folder name';
+      inp.style.cssText = 'background:var(--bg);border:1px solid var(--accent);border-radius:4px;color:var(--text);padding:3px 8px;font-family:var(--mono);font-size:12px;flex:1;min-width:60px;';
       const slash = document.createElement('span');
       slash.textContent = '/';
       slash.style.color = 'var(--text-muted)';
+      labelWrap.appendChild(prefix);
       labelWrap.appendChild(inp);
       labelWrap.appendChild(slash);
     }
