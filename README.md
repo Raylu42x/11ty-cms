@@ -4,47 +4,46 @@ A self-hosted, Dockerized content management system for sites built with [Eleven
 
 The CMS runs on your own VPS. It clones your site repos locally, lets you edit content through a clean web UI, then pushes changes back to GitHub — where a GitHub Actions workflow builds the 11ty site and deploys to GitHub Pages via `/docs`.
 
-![11ty CMS screenshot](https://via.placeholder.com/900x500?text=11ty+CMS)
-
 ---
 
 ## Features
 
 - **Multi-site** — manage as many 11ty sites as you want from one dashboard
 - **File browser** — sidebar tree with folder collapsing and live search/filter
-- **Markdown editor** — full EasyMDE editor with live preview and side-by-side mode
-- **Frontmatter editor** — auto-detected fields (text, boolean, date, number, tags/arrays) with add/remove support
-- **Frontmatter defaults** — define default fields per site and per folder so they pre-populate automatically
-- **Media library** — upload, preview, and insert images; auto-optimized on upload via sharp
-- **Rename & delete files** — full file management without touching the command line
-- **Git history per file** — see the last 15 commits for any file
+- **Markdown editor** — EasyMDE with live preview, side-by-side mode, and word count
+- **Frontmatter editor** — auto-detected field types (text, boolean, date, number, tags) with add/remove
+- **Frontmatter defaults** — define default fields per site and per folder; auto-populate on open/create
+- **Media library** — upload, preview, and insert images; auto-optimized on upload
+- **File management** — rename and delete files without touching the command line
+- **Git history** — see the last 15 commits for any open file
 - **Publish** — commit and push to GitHub with one click; GitHub Actions builds and deploys
 - **Draft saves** — save locally without pushing (Cmd+S / Ctrl+S)
-- **Word count** — live word and line count in the editor status bar
-- **GitHub Actions setup** — automatically writes a build workflow to new repos on first clone
+- **GitHub Actions setup** — automatically writes a build workflow to repos on first clone
 - **Cloudflare Tunnel ready** — no open ports required on your VPS
-- **Docker** — single `docker compose up -d` deployment
+- **Docker** — single `docker compose up -d` to deploy
 
 ---
 
 ## Requirements
 
-- A VPS (any Linux distro) with Docker installed
-- A GitHub account with a personal access token (repo scope)
-- One or more 11ty site repos on GitHub, configured to build to `/docs` for GitHub Pages
-- (Optional) A Cloudflare account for tunnel-based HTTPS access
+- **Node.js 20+** (for local dev)
+- **Docker + Docker Compose** (for VPS deployment)
+- **Git** installed on the host
+- A **GitHub account** with a personal access token (repo scope)
+- One or more **11ty site repos** on GitHub
+- (Optional) A **Cloudflare account** for tunnel-based HTTPS
 
 ---
 
-## Quick Start (local dev)
+## Quick Start — Local Dev
 
 ```bash
-git clone https://github.com/Raylu42x/11ty-cms.git
+git clone https://github.com/YOUR_USERNAME/11ty-cms.git
 cd 11ty-cms
 npm install
 
 cp .env.example .env
-# Edit .env — set SESSION_SECRET, ADMIN_PASSWORD_HASH, and GITHUB_TOKEN
+# Edit .env — at minimum set SESSION_SECRET, ADMIN_PASSWORD_HASH, and GITHUB_TOKEN
 
 npm run dev
 # Open http://localhost:3000
@@ -62,13 +61,13 @@ Paste the output as `ADMIN_PASSWORD_HASH` in `.env`.
 
 | Variable | Required | Description |
 |---|---|---|
-| `PORT` | No | Port to listen on (default: 3000) |
-| `SESSION_SECRET` | Yes | Long random string for session signing |
+| `PORT` | No | Port to listen on (default: `3000`) |
+| `SESSION_SECRET` | Yes | Long random string — `openssl rand -hex 32` |
 | `ADMIN_PASSWORD_HASH` | Yes | bcrypt hash of your admin password |
-| `GITHUB_TOKEN` | Yes | GitHub PAT with `repo` scope for git push |
-| `GIT_USER_NAME` | No | Name used for CMS commits (default: `CMS Bot`) |
-| `GIT_USER_EMAIL` | No | Email used for CMS commits |
-| `REPOS_DIR` | No | Where repos are cloned. Defaults to `./repos/`. Set to `/repos` in Docker. |
+| `GITHUB_TOKEN` | Yes | GitHub PAT with `repo` scope, used to push to your site repos |
+| `GIT_USER_NAME` | No | Name on CMS commits (default: `CMS Bot`) |
+| `GIT_USER_EMAIL` | No | Email on CMS commits |
+| `REPOS_DIR` | No | Where site repos are cloned. Defaults to `./repos/`. Docker sets this to `/repos`. |
 
 ---
 
@@ -83,10 +82,10 @@ curl -fsSL https://get.docker.com | sh
 ### 2. Clone and configure
 
 ```bash
-git clone https://github.com/Raylu42x/11ty-cms.git /opt/11ty-cms
+git clone https://github.com/YOUR_USERNAME/11ty-cms.git /opt/11ty-cms
 cd /opt/11ty-cms
 cp .env.example .env
-nano .env   # fill in your values
+nano .env
 ```
 
 ### 3. Start
@@ -96,11 +95,11 @@ docker compose up -d
 docker compose logs -f   # watch for errors
 ```
 
-The `repos/` and `config/` directories are mounted as Docker volumes and persist across restarts.
+The `repos/` and `config/` directories are bind-mounted, so your site data and config survive container restarts and upgrades.
 
 ---
 
-## Cloudflare Tunnel (recommended — no open ports)
+## Cloudflare Tunnel (recommended — no open ports needed)
 
 ```bash
 # Install cloudflared
@@ -109,9 +108,11 @@ curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloud
 
 cloudflared tunnel login
 cloudflared tunnel create my-cms
+# Note the UUID printed — you'll need it below
 ```
 
 Create `/etc/cloudflared/config.yml`:
+
 ```yaml
 tunnel: <YOUR-TUNNEL-UUID>
 credentials-file: /root/.cloudflared/<YOUR-TUNNEL-UUID>.json
@@ -128,54 +129,77 @@ systemctl enable cloudflared
 systemctl start cloudflared
 ```
 
-In your Cloudflare DNS dashboard, add a CNAME record:
+In your **Cloudflare DNS** dashboard, add:
+- **Type:** CNAME
 - **Name:** `cms`
 - **Target:** `<YOUR-TUNNEL-UUID>.cfargotunnel.com`
-- **Proxy:** on
+- **Proxy status:** Proxied (orange cloud)
+
+Your CMS will be reachable at `https://cms.yourdomain.com` with no firewall rules or open ports.
 
 ---
 
-## Adding a Site
+## Setting Up a Site Repo
 
-Once the CMS is running:
+Before adding a site to the CMS, your GitHub repo needs GitHub Pages enabled to serve from the `/docs` folder:
+
+1. Go to your repo on GitHub → **Settings → Pages**
+2. **Source:** Deploy from a branch
+3. **Branch:** `main` — **Folder:** `/docs`
+4. Save
+
+The CMS will write a GitHub Actions workflow (`.github/workflows/build.yml`) on first clone that runs `npx @11ty/eleventy --output=docs` and commits the result. You don't need to set this up manually.
+
+---
+
+## Adding a Site in the CMS
 
 1. Click **⚙ Sites** in the header
 2. Fill in the **Add a site** form:
-   - **Display name** — anything you want
-   - **GitHub repo URL** — HTTPS clone URL of your 11ty site repo
-   - **Content directory** — folder containing your markdown files (e.g. `src`)
+   - **Display name** — anything you want to call it
+   - **GitHub repo URL** — HTTPS clone URL (e.g. `https://github.com/you/my-site.git`)
+   - **Content directory** — folder with your markdown files (e.g. `src`)
    - **Media directory** — folder for uploaded images (e.g. `src/images`)
    - **Branch** — usually `main`
-   - **Live site URL** — optional, enables the "Visit site ↗" button
+   - **Live site URL** — optional; enables the **Visit site ↗** button in the header
 3. Click **Add & Clone**
 
-The CMS will clone the repo and write a GitHub Actions workflow to `.github/workflows/build.yml` if one doesn't already exist. Publish the workflow with your next **Publish**.
+The repo will be cloned and the GitHub Actions workflow written. Hit **Publish** once to push the workflow file to GitHub.
 
 ---
 
 ## GitHub Actions Workflow
 
-The auto-generated workflow:
-- Triggers on pushes to `main` that touch `src/**` or config files
+The auto-generated workflow (also available in `site-template/`):
+
+- Triggers on pushes to `main` that touch `src/**` or Eleventy config files
 - Runs `npm ci` and `npx @11ty/eleventy --output=docs`
-- Commits the `/docs` output back to the repo (with `[skip ci]` to avoid loops)
+- Commits the `/docs` output back with `[skip ci]` to avoid loops
 - GitHub Pages serves the `/docs` folder
 
-You can customise it after the first publish by editing `.github/workflows/build.yml` in your site repo.
+You can customise it after the first publish by editing `.github/workflows/build.yml` directly in your site repo.
 
 ---
 
 ## Frontmatter Defaults
 
-Open **⚙ Sites → Defaults** to define fields that auto-populate when you open or create files:
+Open **⚙ Sites → Defaults** next to any site to define fields that auto-populate when opening or creating files:
 
-- **Site-wide** — applies to all files in the site
-- **Per folder** — e.g. `posts/` or `projects/` with their own field sets
+- **Site-wide** — applies to every file
+- **Per folder** — e.g. `posts/` or `projects/` override site-wide defaults
 
-Existing file values are never overwritten.
+Field values support strings, numbers, booleans (`true`/`false`), and arrays (`["tag1","tag2"]`). Existing values in files are never overwritten.
+
+---
+
+## GitHub Token Permissions
+
+Create a token at **GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)**. Required scope: `repo` (full control of private repositories — needed to push commits).
+
+The token is stored only in your `.env` file on your VPS and injected into git remote URLs at push time. It is never logged or exposed to the browser.
 
 ---
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
