@@ -20,6 +20,7 @@ function repoPath(siteId) {
 }
 
 function saveSites(sites) {
+  fs.mkdirSync(path.dirname(CONFIG_PATH), { recursive: true });
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(sites, null, 2) + '\n', 'utf8');
 }
 
