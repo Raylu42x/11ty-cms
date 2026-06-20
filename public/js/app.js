@@ -654,14 +654,8 @@
 
   function renderDefaultsTemplates(defs) {
     defaultsTemplates.innerHTML = '';
-    const entries = Object.entries(defs);
-    if (entries.length === 0) {
-      // Start with an empty site-wide section so users see where to add fields
-      defaultsTemplates.appendChild(buildTemplateSection('', {}));
-    } else {
-      for (const [folder, fields] of entries) {
-        defaultsTemplates.appendChild(buildTemplateSection(folder, fields));
-      }
+    for (const [folder, fields] of Object.entries(defs)) {
+      defaultsTemplates.appendChild(buildTemplateSection(folder, fields));
     }
   }
 
