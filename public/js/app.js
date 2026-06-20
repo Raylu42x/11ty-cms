@@ -772,11 +772,10 @@
   }
 
   btnAddTemplate.addEventListener('click', () => {
-    defaultsTemplates.appendChild(buildTemplateSection('', {}));
-    // Focus the newly added folder input if it's not site-wide
+    defaultsTemplates.appendChild(buildTemplateSection('new-folder', {}));
     const newSection = defaultsTemplates.lastElementChild;
     const inp = newSection.querySelector('.defaults-folder-input[type="text"]');
-    if (inp) inp.focus();
+    if (inp) { inp.focus(); inp.select(); }
   });
 
   btnSaveDefaults.addEventListener('click', async () => {
