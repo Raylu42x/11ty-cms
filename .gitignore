@@ -1,0 +1,10 @@
+node_modules/
+.env
+repos/
+config/sites.json
+*.log
+.DS_Store
+.playwright-mcp/
+aftertransfer.md
+plan.md
+11ty exaples/

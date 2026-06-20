@@ -1,0 +1,43 @@
+name: Build 11ty → /docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - '.eleventy.js'
+      - 'eleventy.config.js'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write   # needed to commit /docs back
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Fetch full history so git push doesn't fail on diverged branches
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build with 11ty
+        run: npx @11ty/eleventy --output=docs
+
+      - name: Commit /docs if changed
+        run: |
+          git config user.name  "11ty CMS Bot"
+          git config user.email "cms-bot@noreply.github.com"
+          git add docs/
+          git diff --staged --quiet || git commit -m "build: update /docs [skip ci]"
+          git push
