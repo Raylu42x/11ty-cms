@@ -64,7 +64,7 @@ Paste the output as `ADMIN_PASSWORD_HASH` in `.env`.
 | `PORT` | No | Port to listen on (default: `3000`) |
 | `SESSION_SECRET` | Yes | Long random string — `openssl rand -hex 32` |
 | `ADMIN_PASSWORD_HASH` | Yes | bcrypt hash of your admin password |
-| `GITHUB_TOKEN` | Yes | GitHub PAT with `repo` scope, used to push to your site repos |
+| `GITHUB_TOKEN` | Yes | GitHub PAT with `repo` scope and 'workflow', used to push to your site repos |
 | `GIT_USER_NAME` | No | Name on CMS commits (default: `CMS Bot`) |
 | `GIT_USER_EMAIL` | No | Email on CMS commits |
 | `REPOS_DIR` | No | Where site repos are cloned. Defaults to `./repos/`. Docker sets this to `/repos`. |
