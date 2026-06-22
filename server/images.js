@@ -5,7 +5,11 @@ const { repoPath } = require('./sites');
 
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg']);
 const ALLOWED_MIME = new Set([
-  'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/svg+xml',
 ]);
 
 function mediaRoot(site) {
@@ -21,7 +25,7 @@ function getUpload(site) {
     filename: (req, file, cb) => {
       const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
       cb(null, safe);
-    }
+    },
   });
 
   return multer({
@@ -30,14 +34,14 @@ function getUpload(site) {
     fileFilter: (req, file, cb) => {
       if (ALLOWED_MIME.has(file.mimetype)) cb(null, true);
       else cb(new Error(`File type not allowed: ${file.mimetype}`));
-    }
+    },
   });
 }
 
 function listMedia(site) {
   const dir = mediaRoot(site);
   if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir).filter(f => IMAGE_EXTENSIONS.has(path.extname(f).toLowerCase()));
+  return fs.readdirSync(dir).filter((f) => IMAGE_EXTENSIONS.has(path.extname(f).toLowerCase()));
 }
 
 async function optimizeImage(filePath) {
@@ -45,11 +49,11 @@ async function optimizeImage(filePath) {
   if (['.svg', '.gif'].includes(ext)) return;
   try {
     const sharp = require('sharp');
-    const buf = await sharp(filePath)
-      .resize({ width: 2400, withoutEnlargement: true })
-      .toBuffer();
+    const buf = await sharp(filePath).resize({ width: 2400, withoutEnlargement: true }).toBuffer();
     fs.writeFileSync(filePath, buf);
-  } catch { /* sharp not installed or unsupported format — skip */ }
+  } catch {
+    /* sharp not installed or unsupported format — skip */
+  }
 }
 
 function deleteMedia(site, filename) {

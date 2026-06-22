@@ -1,241 +1,284 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>11ty CMS</title>
-  <link rel="stylesheet" href="/css/style.css">
-  <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>11ty CMS</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css" />
+  </head>
+  <body>
+    <!-- Header -->
+    <header id="header">
+      <div class="header-left">
+        <span class="logo">11ty CMS</span>
+        <select id="site-select">
+          <option value="">— select a site —</option>
+        </select>
+      </div>
+      <div class="header-right">
+        <span id="status-badge" class="status-badge" hidden></span>
+        <a id="btn-preview-site" class="btn btn-ghost btn-sm" target="_blank" rel="noopener" hidden
+          >Visit site ↗</a
+        >
+        <button id="btn-publish" class="btn btn-primary btn-sm" disabled>Publish</button>
+        <button id="btn-manage-sites" class="btn btn-ghost btn-sm" title="Manage sites">
+          ⚙ Sites
+        </button>
+        <button id="btn-logout" class="btn btn-ghost btn-sm">Sign out</button>
+      </div>
+    </header>
 
-  <!-- Header -->
-  <header id="header">
-    <div class="header-left">
-      <span class="logo">11ty CMS</span>
-      <select id="site-select">
-        <option value="">— select a site —</option>
-      </select>
+    <!-- Update banner (hidden unless an update is available) -->
+    <div id="update-banner" class="update-banner" hidden>
+      <span id="update-banner-text"></span>
+      <a id="update-banner-link" target="_blank" rel="noopener">View release ↗</a>
+      <button
+        id="update-banner-dismiss"
+        class="btn btn-ghost btn-sm"
+        title="Dismiss until next version"
+      >
+        ✕
+      </button>
     </div>
-    <div class="header-right">
-      <span id="status-badge" class="status-badge" hidden></span>
-      <a id="btn-preview-site" class="btn btn-ghost btn-sm" target="_blank" rel="noopener" hidden>Visit site ↗</a>
-      <button id="btn-publish" class="btn btn-primary btn-sm" disabled>Publish</button>
-      <button id="btn-manage-sites" class="btn btn-ghost btn-sm" title="Manage sites">⚙ Sites</button>
-      <button id="btn-logout" class="btn btn-ghost btn-sm">Sign out</button>
-    </div>
-  </header>
 
-  <!-- App shell -->
-  <div id="app">
+    <!-- App shell -->
+    <div id="app">
+      <!-- Sidebar: file tree -->
+      <aside id="sidebar">
+        <div class="sidebar-header">
+          <span class="sidebar-title">Files</span>
+          <button id="btn-new-file" class="btn btn-sm btn-ghost" disabled>+ New</button>
+        </div>
+        <div id="sidebar-search-wrap">
+          <input type="text" id="sidebar-search" placeholder="Filter files…" disabled />
+        </div>
+        <div id="file-tree"></div>
+      </aside>
 
-    <!-- Sidebar: file tree -->
-    <aside id="sidebar">
-      <div class="sidebar-header">
-        <span class="sidebar-title">Files</span>
-        <button id="btn-new-file" class="btn btn-sm btn-ghost" disabled>+ New</button>
-      </div>
-      <div id="sidebar-search-wrap">
-        <input type="text" id="sidebar-search" placeholder="Filter files…" disabled>
-      </div>
-      <div id="file-tree"></div>
-    </aside>
-
-    <!-- Editor pane -->
-    <main id="editor-pane">
-      <div id="editor-empty" class="editor-empty">
-        <p>Select a file to start editing</p>
-      </div>
-
-      <div id="editor-content" hidden>
-        <div id="editor-header">
-          <span id="current-file-name"></span>
-          <div class="editor-header-actions">
-            <button id="btn-rename-file" class="btn btn-sm btn-ghost">Rename</button>
-            <button id="btn-history-file" class="btn btn-sm btn-ghost">History</button>
-            <button id="btn-delete-file" class="btn btn-sm btn-ghost" style="color:var(--danger)">Delete</button>
-            <button id="btn-save" class="btn btn-sm btn-primary">Save Draft</button>
-          </div>
+      <!-- Editor pane -->
+      <main id="editor-pane">
+        <div id="editor-empty" class="editor-empty">
+          <p>Select a file to start editing</p>
         </div>
 
-        <!-- Frontmatter -->
-        <div id="frontmatter-form"></div>
-
-        <!-- Body (EasyMDE) -->
-        <div id="editor-body">
-          <textarea id="body-editor"></textarea>
-        </div>
-      </div>
-    </main>
-
-  </div><!-- /app -->
-
-  <!-- Media picker modal -->
-  <div id="modal-media" class="modal" hidden>
-    <div class="modal-backdrop" id="media-backdrop"></div>
-    <div class="modal-box">
-      <div class="modal-header">
-        <h2>Media Library</h2>
-        <button class="modal-close" id="btn-close-media">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="media-toolbar">
-          <input type="file" id="media-file-input" accept="image/*" hidden>
-          <button class="btn btn-sm btn-ghost" id="btn-upload-media">Upload image</button>
-          <span id="upload-status" style="font-size:12px;color:var(--text-muted)"></span>
-        </div>
-        <div id="media-grid"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- New file modal -->
-  <div id="modal-new-file" class="modal" hidden>
-    <div class="modal-backdrop" id="new-file-backdrop"></div>
-    <div class="modal-box" style="width:420px">
-      <div class="modal-header">
-        <h2>New File</h2>
-        <button class="modal-close" id="btn-close-new-file">✕</button>
-      </div>
-      <div class="modal-body">
-        <div>
-          <label class="form-label">Path (relative to content directory)</label>
-          <input type="text" id="new-file-path" placeholder="posts/my-new-post.md">
-        </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-primary" id="btn-create-file">Create</button>
-          <span id="new-file-error" style="font-size:12px;color:var(--danger);align-self:center"></span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Manage Sites modal -->
-  <div id="modal-sites" class="modal" hidden>
-    <div class="modal-backdrop" id="sites-backdrop"></div>
-    <div class="modal-box" style="width:560px">
-      <div class="modal-header">
-        <h2>Manage Sites</h2>
-        <button class="modal-close" id="btn-close-sites">✕</button>
-      </div>
-      <div class="modal-body">
-
-        <!-- Current sites list -->
-        <div>
-          <p class="modal-section-label">Registered sites</p>
-          <div id="sites-list"></div>
-        </div>
-
-        <hr class="modal-divider">
-
-        <!-- Add site form -->
-        <div>
-          <p class="modal-section-label">Add a site</p>
-          <div class="add-site-form">
-            <div class="add-site-row">
-              <label class="form-label">Display name</label>
-              <input type="text" id="ns-name" placeholder="my-site.com">
-            </div>
-            <div class="add-site-row">
-              <label class="form-label">GitHub repo URL</label>
-              <input type="text" id="ns-repo" placeholder="https://github.com/you/site.git">
-            </div>
-            <div class="add-site-row two-col">
-              <div>
-                <label class="form-label">Content directory</label>
-                <input type="text" id="ns-contentdir" value="src" placeholder="src">
-              </div>
-              <div>
-                <label class="form-label">Media directory</label>
-                <input type="text" id="ns-mediadir" value="src/images" placeholder="src/images">
-              </div>
-            </div>
-            <div class="add-site-row" style="max-width:140px">
-              <label class="form-label">Branch</label>
-              <input type="text" id="ns-branch" value="main" placeholder="main">
-            </div>
-            <div class="add-site-row">
-              <label class="form-label">Live site URL <span style="color:var(--text-muted);font-weight:400">(optional — for "Visit site" button)</span></label>
-              <input type="text" id="ns-liveurl" placeholder="https://my-site.com">
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
-              <button class="btn btn-primary" id="btn-add-site">Add &amp; Clone</button>
-              <span id="add-site-status" class="add-site-status"></span>
+        <div id="editor-content" hidden>
+          <div id="editor-header">
+            <span id="current-file-name"></span>
+            <div class="editor-header-actions">
+              <button id="btn-rename-file" class="btn btn-sm btn-ghost">Rename</button>
+              <button id="btn-history-file" class="btn btn-sm btn-ghost">History</button>
+              <button
+                id="btn-delete-file"
+                class="btn btn-sm btn-ghost"
+                style="color: var(--danger)"
+              >
+                Delete
+              </button>
+              <button id="btn-save" class="btn btn-sm btn-primary">Save Draft</button>
             </div>
           </div>
-        </div>
 
-      </div>
+          <!-- Frontmatter -->
+          <div id="frontmatter-form"></div>
+
+          <!-- Body (EasyMDE) -->
+          <div id="editor-body">
+            <textarea id="body-editor"></textarea>
+          </div>
+        </div>
+      </main>
     </div>
-  </div>
+    <!-- /app -->
 
-  <!-- Rename file modal -->
-  <div id="modal-rename" class="modal" hidden>
-    <div class="modal-backdrop" id="rename-backdrop"></div>
-    <div class="modal-box" style="width:420px">
-      <div class="modal-header">
-        <h2>Rename File</h2>
-        <button class="modal-close" id="btn-close-rename">✕</button>
-      </div>
-      <div class="modal-body">
-        <div>
-          <label class="form-label">New path (relative to content directory)</label>
-          <input type="text" id="rename-file-path">
+    <!-- Media picker modal -->
+    <div id="modal-media" class="modal" hidden>
+      <div class="modal-backdrop" id="media-backdrop"></div>
+      <div class="modal-box">
+        <div class="modal-header">
+          <h2>Media Library</h2>
+          <button class="modal-close" id="btn-close-media">✕</button>
         </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button class="btn btn-primary btn-sm" id="btn-confirm-rename">Rename</button>
-          <span id="rename-error" style="font-size:12px;color:var(--danger)"></span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- File history modal -->
-  <div id="modal-history" class="modal" hidden>
-    <div class="modal-backdrop" id="history-backdrop"></div>
-    <div class="modal-box" style="width:520px">
-      <div class="modal-header">
-        <h2>History — <span id="history-file-name" style="font-family:var(--mono);font-size:13px;font-weight:400"></span></h2>
-        <button class="modal-close" id="btn-close-history">✕</button>
-      </div>
-      <div class="modal-body">
-        <div id="history-list"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Frontmatter Defaults modal -->
-  <div id="modal-defaults" class="modal" hidden>
-    <div class="modal-backdrop" id="defaults-backdrop"></div>
-    <div class="modal-box" style="width:580px">
-      <div class="modal-header">
-        <h2>Frontmatter Defaults — <span id="defaults-site-name"></span></h2>
-        <button class="modal-close" id="btn-close-defaults">✕</button>
-      </div>
-      <div class="modal-body">
-        <p style="font-size:12px;color:var(--text-muted);margin-bottom:4px">
-          Fields defined here auto-populate when opening or creating files. Folder rules override site-wide rules; existing file values are never overwritten.
-        </p>
-        <div id="defaults-templates"></div>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-ghost btn-sm" id="btn-add-sitewide">+ Site-wide rule</button>
-          <button class="btn btn-ghost btn-sm" id="btn-add-template">+ Folder rule</button>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;padding-top:8px;border-top:1px solid var(--border);margin-top:4px">
-          <button class="btn btn-primary btn-sm" id="btn-save-defaults">Save defaults</button>
-          <span id="defaults-status" style="font-size:12px;color:var(--text-muted)"></span>
+        <div class="modal-body">
+          <div class="media-toolbar">
+            <input type="file" id="media-file-input" accept="image/*" hidden />
+            <button class="btn btn-sm btn-ghost" id="btn-upload-media">Upload image</button>
+            <span id="upload-status" style="font-size: 12px; color: var(--text-muted)"></span>
+          </div>
+          <div id="media-grid"></div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Toast -->
-  <div id="toast" hidden></div>
+    <!-- New file modal -->
+    <div id="modal-new-file" class="modal" hidden>
+      <div class="modal-backdrop" id="new-file-backdrop"></div>
+      <div class="modal-box" style="width: 420px">
+        <div class="modal-header">
+          <h2>New File</h2>
+          <button class="modal-close" id="btn-close-new-file">✕</button>
+        </div>
+        <div class="modal-body">
+          <div>
+            <label class="form-label">Path (relative to content directory)</label>
+            <input type="text" id="new-file-path" placeholder="posts/my-new-post.md" />
+          </div>
+          <div style="display: flex; gap: 8px">
+            <button class="btn btn-primary" id="btn-create-file">Create</button>
+            <span
+              id="new-file-error"
+              style="font-size: 12px; color: var(--danger); align-self: center"
+            ></span>
+          </div>
+        </div>
+      </div>
+    </div>
 
-  <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
-  <script src="/js/api.js"></script>
-  <script src="/js/filebrowser.js"></script>
-  <script src="/js/editor.js"></script>
-  <script src="/js/app.js"></script>
-</body>
+    <!-- Manage Sites modal -->
+    <div id="modal-sites" class="modal" hidden>
+      <div class="modal-backdrop" id="sites-backdrop"></div>
+      <div class="modal-box" style="width: 560px">
+        <div class="modal-header">
+          <h2>Manage Sites</h2>
+          <button class="modal-close" id="btn-close-sites">✕</button>
+        </div>
+        <div class="modal-body">
+          <!-- Current sites list -->
+          <div>
+            <p class="modal-section-label">Registered sites</p>
+            <div id="sites-list"></div>
+          </div>
+
+          <hr class="modal-divider" />
+
+          <!-- Add site form -->
+          <div>
+            <p class="modal-section-label">Add a site</p>
+            <div class="add-site-form">
+              <div class="add-site-row">
+                <label class="form-label">Display name</label>
+                <input type="text" id="ns-name" placeholder="my-site.com" />
+              </div>
+              <div class="add-site-row">
+                <label class="form-label">GitHub repo URL</label>
+                <input type="text" id="ns-repo" placeholder="https://github.com/you/site.git" />
+              </div>
+              <div class="add-site-row two-col">
+                <div>
+                  <label class="form-label">Content directory</label>
+                  <input type="text" id="ns-contentdir" value="src" placeholder="src" />
+                </div>
+                <div>
+                  <label class="form-label">Media directory</label>
+                  <input type="text" id="ns-mediadir" value="src/images" placeholder="src/images" />
+                </div>
+              </div>
+              <div class="add-site-row" style="max-width: 140px">
+                <label class="form-label">Branch</label>
+                <input type="text" id="ns-branch" value="main" placeholder="main" />
+              </div>
+              <div class="add-site-row">
+                <label class="form-label"
+                  >Live site URL
+                  <span style="color: var(--text-muted); font-weight: 400"
+                    >(optional — for "Visit site" button)</span
+                  ></label
+                >
+                <input type="text" id="ns-liveurl" placeholder="https://my-site.com" />
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px">
+                <button class="btn btn-primary" id="btn-add-site">Add &amp; Clone</button>
+                <span id="add-site-status" class="add-site-status"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rename file modal -->
+    <div id="modal-rename" class="modal" hidden>
+      <div class="modal-backdrop" id="rename-backdrop"></div>
+      <div class="modal-box" style="width: 420px">
+        <div class="modal-header">
+          <h2>Rename File</h2>
+          <button class="modal-close" id="btn-close-rename">✕</button>
+        </div>
+        <div class="modal-body">
+          <div>
+            <label class="form-label">New path (relative to content directory)</label>
+            <input type="text" id="rename-file-path" />
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center">
+            <button class="btn btn-primary btn-sm" id="btn-confirm-rename">Rename</button>
+            <span id="rename-error" style="font-size: 12px; color: var(--danger)"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- File history modal -->
+    <div id="modal-history" class="modal" hidden>
+      <div class="modal-backdrop" id="history-backdrop"></div>
+      <div class="modal-box" style="width: 520px">
+        <div class="modal-header">
+          <h2>
+            History —
+            <span
+              id="history-file-name"
+              style="font-family: var(--mono); font-size: 13px; font-weight: 400"
+            ></span>
+          </h2>
+          <button class="modal-close" id="btn-close-history">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="history-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Frontmatter Defaults modal -->
+    <div id="modal-defaults" class="modal" hidden>
+      <div class="modal-backdrop" id="defaults-backdrop"></div>
+      <div class="modal-box" style="width: 580px">
+        <div class="modal-header">
+          <h2>Frontmatter Defaults — <span id="defaults-site-name"></span></h2>
+          <button class="modal-close" id="btn-close-defaults">✕</button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px">
+            Fields defined here auto-populate when opening or creating files. Folder rules override
+            site-wide rules; existing file values are never overwritten.
+          </p>
+          <div id="defaults-templates"></div>
+          <div style="display: flex; gap: 6px">
+            <button class="btn btn-ghost btn-sm" id="btn-add-sitewide">+ Site-wide rule</button>
+            <button class="btn btn-ghost btn-sm" id="btn-add-template">+ Folder rule</button>
+          </div>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              padding-top: 8px;
+              border-top: 1px solid var(--border);
+              margin-top: 4px;
+            "
+          >
+            <button class="btn btn-primary btn-sm" id="btn-save-defaults">Save defaults</button>
+            <span id="defaults-status" style="font-size: 12px; color: var(--text-muted)"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" hidden></div>
+
+    <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/filebrowser.js"></script>
+    <script src="/js/editor.js"></script>
+    <script src="/js/app.js"></script>
+  </body>
 </html>

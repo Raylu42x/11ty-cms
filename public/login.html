@@ -1,66 +1,72 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>11ty CMS — Login</title>
-  <link rel="stylesheet" href="/css/style.css">
-  <style>html, body { overflow: auto !important; height: auto !important; }</style>
-</head>
-<body>
-  <div class="login-page">
-    <div class="login-card">
-      <h1 class="login-title">11ty CMS</h1>
-      <p class="login-sub">Enter your password to continue</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>11ty CMS — Login</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <style>
+      html,
+      body {
+        overflow: auto !important;
+        height: auto !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-page">
+      <div class="login-card">
+        <h1 class="login-title">11ty CMS</h1>
+        <p class="login-sub">Enter your password to continue</p>
 
-      <form id="login-form" autocomplete="on">
-        <div class="login-field">
-          <label class="form-label" for="password">Password</label>
-          <input
-            type="password"
-            id="password"
-            class="form-input"
-            autocomplete="current-password"
-            autofocus
-          >
-        </div>
-        <button type="submit" class="btn btn-primary" style="width:100%">Sign in</button>
-        <p id="login-error" class="login-error"></p>
-      </form>
+        <form id="login-form" autocomplete="on">
+          <div class="login-field">
+            <label class="form-label" for="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              class="form-input"
+              autocomplete="current-password"
+              autofocus
+            />
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%">Sign in</button>
+          <p id="login-error" class="login-error"></p>
+        </form>
+      </div>
     </div>
-  </div>
 
-  <script>
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = e.target.querySelector('[type="submit"]');
-      const errEl = document.getElementById('login-error');
-      const password = document.getElementById('password').value;
+    <script>
+      document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('[type="submit"]');
+        const errEl = document.getElementById('login-error');
+        const password = document.getElementById('password').value;
 
-      btn.disabled = true;
-      btn.textContent = 'Signing in…';
-      errEl.textContent = '';
+        btn.disabled = true;
+        btn.textContent = 'Signing in…';
+        errEl.textContent = '';
 
-      try {
-        const r = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password })
-        });
-        const data = await r.json();
-        if (r.ok) {
-          window.location.href = '/';
-        } else {
-          errEl.textContent = data.error || 'Login failed';
+        try {
+          const r = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password }),
+          });
+          const data = await r.json();
+          if (r.ok) {
+            window.location.href = '/';
+          } else {
+            errEl.textContent = data.error || 'Login failed';
+            btn.disabled = false;
+            btn.textContent = 'Sign in';
+          }
+        } catch {
+          errEl.textContent = 'Network error — is the server running?';
           btn.disabled = false;
           btn.textContent = 'Sign in';
         }
-      } catch {
-        errEl.textContent = 'Network error — is the server running?';
-        btn.disabled = false;
-        btn.textContent = 'Sign in';
-      }
-    });
-  </script>
-</body>
+      });
+    </script>
+  </body>
 </html>

@@ -8,7 +8,7 @@ function getGit(siteId) {
     config: [
       `user.name=${process.env.GIT_USER_NAME || '11ty CMS'}`,
       `user.email=${process.env.GIT_USER_EMAIL || 'cms@localhost'}`,
-    ]
+    ],
   });
 }
 
@@ -43,7 +43,7 @@ async function getStatus(siteId) {
     not_added: st.not_added,
     deleted: st.deleted,
     staged: st.staged,
-    lastCommit: log.latest
+    lastCommit: log.latest,
   };
 }
 
@@ -62,11 +62,11 @@ async function commitAndPush(siteId, branch, message) {
 async function getFileLog(siteId, repoRelPath, maxCount = 15) {
   const git = getGit(siteId);
   const log = await git.log({ file: repoRelPath, maxCount });
-  return log.all.map(c => ({
-    hash:    c.hash.slice(0, 7),
-    date:    c.date,
+  return log.all.map((c) => ({
+    hash: c.hash.slice(0, 7),
+    date: c.date,
     message: c.message,
-    author:  c.author_name
+    author: c.author_name,
   }));
 }
 

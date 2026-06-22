@@ -4,11 +4,17 @@ services:
     build:
       context: .
     ports:
-      - "3000:3000"
+      - '3000:3000'
     volumes:
       - ./repos:/repos
       - ./config:/app/config
     env_file: .env
     restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/healthz']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     # Caddy (or any reverse proxy) sits in front; CMS is never exposed raw.
     # Set SESSION_SECRET and ADMIN_PASSWORD_HASH in .env before running.

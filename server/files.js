@@ -52,7 +52,7 @@ function readFile(site, relativePath) {
   return {
     frontmatter: parsed.data,
     body: parsed.content,
-    ext: path.extname(relativePath)
+    ext: path.extname(relativePath),
   };
 }
 

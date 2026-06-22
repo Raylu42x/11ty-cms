@@ -1,8 +1,14 @@
 # 11ty CMS
 
+[![CI](https://github.com/Raylu42x/11ty-cms/actions/workflows/ci.yml/badge.svg)](https://github.com/Raylu42x/11ty-cms/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](./.nvmrc)
+
 A self-hosted, Dockerized content management system for sites built with [Eleventy (11ty)](https://www.11ty.dev/) and hosted on GitHub Pages.
 
 The CMS runs on your own VPS. It clones your site repos locally, lets you edit content through a clean web UI, then pushes changes back to GitHub — where a GitHub Actions workflow builds the 11ty site and deploys to GitHub Pages via `/docs`.
+
+> **Don't have an 11ty site yet?** Fork the [11ty-example-site](https://github.com/Raylu42x/11ty-example-site) starter and add it to the CMS to try everything end-to-end in a few minutes.
 
 ---
 
@@ -29,9 +35,29 @@ The CMS runs on your own VPS. It clones your site repos locally, lets you edit c
 - **Node.js 20+** (for local dev)
 - **Docker + Docker Compose** (for VPS deployment)
 - **Git** installed on the host
-- A **GitHub account** with a personal access token (repo scope)
+- A **GitHub account** with a personal access token (`repo` and `workflow` scopes)
 - One or more **11ty site repos** on GitHub
 - (Optional) A **Cloudflare account** for tunnel-based HTTPS
+
+---
+
+## Quick Start — Prebuilt Docker Image
+
+A prebuilt multi-arch image (`linux/amd64`, `linux/arm64`) is published to GHCR on every release:
+
+```bash
+mkdir -p repos config
+cp .env.example .env
+# Edit .env — set SESSION_SECRET, ADMIN_PASSWORD_HASH, GITHUB_TOKEN
+
+docker run -d --name 11ty-cms \
+  -p 3000:3000 \
+  --env-file .env \
+  -v "$PWD/repos:/repos" \
+  -v "$PWD/config:/app/config" \
+  --restart unless-stopped \
+  ghcr.io/raylu42x/11ty-cms:latest
+```
 
 ---
 
@@ -50,24 +76,26 @@ npm run dev
 ```
 
 **Generate a password hash:**
+
 ```bash
 node -e "require('bcrypt').hash('yourpassword', 12).then(console.log)"
 ```
+
 Paste the output as `ADMIN_PASSWORD_HASH` in `.env`.
 
 ---
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|---|---|---|
-| `PORT` | No | Port to listen on (default: `3000`) |
-| `SESSION_SECRET` | Yes | Long random string — `openssl rand -hex 32` |
-| `ADMIN_PASSWORD_HASH` | Yes | bcrypt hash of your admin password |
-| `GITHUB_TOKEN` | Yes | GitHub PAT with `repo` scope and 'workflow', used to push to your site repos |
-| `GIT_USER_NAME` | No | Name on CMS commits (default: `CMS Bot`) |
-| `GIT_USER_EMAIL` | No | Email on CMS commits |
-| `REPOS_DIR` | No | Where site repos are cloned. Defaults to `./repos/`. Docker sets this to `/repos`. |
+| Variable              | Required | Description                                                                        |
+| --------------------- | -------- | ---------------------------------------------------------------------------------- |
+| `PORT`                | No       | Port to listen on (default: `3000`)                                                |
+| `SESSION_SECRET`      | Yes      | Long random string — `openssl rand -hex 32`                                        |
+| `ADMIN_PASSWORD_HASH` | Yes      | bcrypt hash of your admin password                                                 |
+| `GITHUB_TOKEN`        | Yes      | GitHub PAT with `repo` and `workflow` scopes, used to push to your site repos      |
+| `GIT_USER_NAME`       | No       | Name on CMS commits (default: `CMS Bot`)                                           |
+| `GIT_USER_EMAIL`      | No       | Email on CMS commits                                                               |
+| `REPOS_DIR`           | No       | Where site repos are cloned. Defaults to `./repos/`. Docker sets this to `/repos`. |
 
 ---
 
@@ -130,6 +158,7 @@ systemctl start cloudflared
 ```
 
 In your **Cloudflare DNS** dashboard, add:
+
 - **Type:** CNAME
 - **Name:** `cms`
 - **Target:** `<YOUR-TUNNEL-UUID>.cfargotunnel.com`

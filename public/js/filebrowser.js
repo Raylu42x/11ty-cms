@@ -13,7 +13,7 @@ class FileBrowser {
 
   setActive(path) {
     this.activePath = path;
-    this.container.querySelectorAll('.tree-file').forEach(el => {
+    this.container.querySelectorAll('.tree-file').forEach((el) => {
       el.classList.toggle('active', el.dataset.path === path);
     });
   }
@@ -42,7 +42,8 @@ class FileBrowser {
     const entries = Object.entries(node);
     // Folders first, then alphabetical
     entries.sort(([a, av], [b, bv]) => {
-      const aDir = av !== null, bDir = bv !== null;
+      const aDir = av !== null,
+        bDir = bv !== null;
       if (aDir !== bDir) return aDir ? -1 : 1;
       return a.localeCompare(b);
     });

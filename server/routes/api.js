@@ -6,7 +6,12 @@ const { loadSites, saveSites, getSite, repoPath } = require('../sites');
 const { cloneOrPull, getStatus, commitAndPush, getFileLog } = require('../git');
 const { listFiles, readFile, writeFile, createFile, deleteFile, renameFile } = require('../files');
 const { getUpload, listMedia, deleteMedia, mediaRoot, optimizeImage } = require('../images');
+const updates = require('../updates');
 const path = require('path');
+
+router.get('/updates', (req, res) => {
+  res.json(updates.getStatus());
+});
 
 // ── GitHub Actions workflow template ───────────────────────────────────────
 
@@ -51,9 +56,9 @@ jobs:
 // List all sites, annotated with whether the repo is cloned locally
 router.get('/sites', (req, res) => {
   try {
-    const sites = loadSites().map(s => ({
+    const sites = loadSites().map((s) => ({
       ...s,
-      cloned: fs.existsSync(path.join(repoPath(s.id), '.git'))
+      cloned: fs.existsSync(path.join(repoPath(s.id), '.git')),
     }));
     res.json(sites);
   } catch (err) {
@@ -67,10 +72,13 @@ router.post('/sites', (req, res) => {
   if (!name || !repo) return res.status(400).json({ error: 'name and repo are required' });
 
   // Derive a stable ID from the name
-  const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const id = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 
   const sites = loadSites();
-  if (sites.find(s => s.id === id)) {
+  if (sites.find((s) => s.id === id)) {
     return res.status(409).json({ error: `Site ID "${id}" already exists` });
   }
 
@@ -79,9 +87,9 @@ router.post('/sites', (req, res) => {
     name,
     repo,
     contentDir: contentDir || 'src',
-    mediaDir:   mediaDir   || 'src/images',
-    branch:     branch     || 'main',
-    ...(liveUrl && { liveUrl })
+    mediaDir: mediaDir || 'src/images',
+    branch: branch || 'main',
+    ...(liveUrl && { liveUrl }),
   };
 
   sites.push(newSite);
@@ -92,7 +100,7 @@ router.post('/sites', (req, res) => {
 // Remove a site from config (does not delete the local clone)
 router.delete('/sites/:id', (req, res) => {
   const sites = loadSites();
-  const idx = sites.findIndex(s => s.id === req.params.id);
+  const idx = sites.findIndex((s) => s.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Site not found' });
   sites.splice(idx, 1);
   saveSites(sites);
@@ -247,7 +255,8 @@ router.get('/sites/:id/media/:filename', (req, res) => {
   if (!site) return res.status(404).json({ error: 'Site not found' });
   const dir = mediaRoot(site);
   const absPath = path.resolve(dir, req.params.filename);
-  if (!absPath.startsWith(dir + path.sep)) return res.status(400).json({ error: 'Invalid filename' });
+  if (!absPath.startsWith(dir + path.sep))
+    return res.status(400).json({ error: 'Invalid filename' });
   res.sendFile(absPath);
 });
 
@@ -285,7 +294,7 @@ router.get('/sites/:id/defaults', (req, res) => {
 
 router.put('/sites/:id/defaults', (req, res) => {
   const sites = loadSites();
-  const idx = sites.findIndex(s => s.id === req.params.id);
+  const idx = sites.findIndex((s) => s.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Site not found' });
   sites[idx].frontmatterDefaults = req.body;
   saveSites(sites);
@@ -293,6 +302,23 @@ router.put('/sites/:id/defaults', (req, res) => {
 });
 
 // ── Publish ────────────────────────────────────────────────────────────────
+
+function explainPublishError(message) {
+  const m = String(message);
+  if (/workflow.*scope/i.test(m)) {
+    return 'Your GitHub token is missing the `workflow` scope, which is required to push changes under `.github/workflows/`. Regenerate the token with both `repo` and `workflow` scopes, then update GITHUB_TOKEN in .env and restart.';
+  }
+  if (/could not read Password|Authentication failed|Invalid username or password/i.test(m)) {
+    return 'GitHub rejected the credentials. Check that GITHUB_TOKEN in .env is set, not expired, and has `repo` scope.';
+  }
+  if (/Repository not found/i.test(m)) {
+    return "GitHub says the repository was not found. Check the `repo` URL in this site's config and that the token has access to it.";
+  }
+  if (/non-fast-forward|rejected.*fetch first/i.test(m)) {
+    return "The remote has commits that aren't in your local clone, and the rebase failed. Resolve conflicts manually in the repo directory and try again.";
+  }
+  return null;
+}
 
 router.post('/sites/:id/publish', async (req, res) => {
   const site = getSite(req.params.id);
@@ -302,7 +328,8 @@ router.post('/sites/:id/publish', async (req, res) => {
     await commitAndPush(site.id, site.branch || 'main', message);
     res.json({ ok: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    const hint = explainPublishError(err.message);
+    res.status(500).json({ error: err.message, hint });
   }
 });
 

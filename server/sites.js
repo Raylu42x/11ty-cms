@@ -11,7 +11,7 @@ function loadSites() {
 }
 
 function getSite(id) {
-  return loadSites().find(s => s.id === id) || null;
+  return loadSites().find((s) => s.id === id) || null;
 }
 
 function repoPath(siteId) {

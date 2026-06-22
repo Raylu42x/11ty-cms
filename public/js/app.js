@@ -1,42 +1,41 @@
 /* Main application controller */
 (async () => {
-
   // ── State ────────────────────────────────────────────────────────────────
   let sites = [];
   let currentSite = null;
-  let currentFile = null;          // { path, data }
+  let currentFile = null; // { path, data }
   let imagePickerCallback = null;
   let allFiles = [];
 
   // ── Elements ─────────────────────────────────────────────────────────────
-  const siteSelect       = document.getElementById('site-select');
-  const btnPublish       = document.getElementById('btn-publish');
-  const btnPreviewSite   = document.getElementById('btn-preview-site');
-  const btnLogout        = document.getElementById('btn-logout');
-  const btnNewFile       = document.getElementById('btn-new-file');
-  const btnManageSites   = document.getElementById('btn-manage-sites');
-  const statusBadge      = document.getElementById('status-badge');
-  const fileTreeEl       = document.getElementById('file-tree');
-  const sidebarSearch    = document.getElementById('sidebar-search');
+  const siteSelect = document.getElementById('site-select');
+  const btnPublish = document.getElementById('btn-publish');
+  const btnPreviewSite = document.getElementById('btn-preview-site');
+  const btnLogout = document.getElementById('btn-logout');
+  const btnNewFile = document.getElementById('btn-new-file');
+  const btnManageSites = document.getElementById('btn-manage-sites');
+  const statusBadge = document.getElementById('status-badge');
+  const fileTreeEl = document.getElementById('file-tree');
+  const sidebarSearch = document.getElementById('sidebar-search');
 
-  const modalMedia     = document.getElementById('modal-media');
-  const btnCloseMedia  = document.getElementById('btn-close-media');
-  const mediaBackdrop  = document.getElementById('media-backdrop');
-  const mediaGrid      = document.getElementById('media-grid');
+  const modalMedia = document.getElementById('modal-media');
+  const btnCloseMedia = document.getElementById('btn-close-media');
+  const mediaBackdrop = document.getElementById('media-backdrop');
+  const mediaGrid = document.getElementById('media-grid');
   const btnUploadMedia = document.getElementById('btn-upload-media');
   const mediaFileInput = document.getElementById('media-file-input');
-  const uploadStatus   = document.getElementById('upload-status');
+  const uploadStatus = document.getElementById('upload-status');
 
-  const modalNewFile   = document.getElementById('modal-new-file');
-  const btnCloseNew    = document.getElementById('btn-close-new-file');
-  const newFileBackdrop= document.getElementById('new-file-backdrop');
-  const newFilePath    = document.getElementById('new-file-path');
-  const newFileError   = document.getElementById('new-file-error');
-  const btnCreateFile  = document.getElementById('btn-create-file');
+  const modalNewFile = document.getElementById('modal-new-file');
+  const btnCloseNew = document.getElementById('btn-close-new-file');
+  const newFileBackdrop = document.getElementById('new-file-backdrop');
+  const newFilePath = document.getElementById('new-file-path');
+  const newFileError = document.getElementById('new-file-error');
+  const btnCreateFile = document.getElementById('btn-create-file');
 
-  const btnSave        = document.getElementById('btn-save');
-  const btnDeleteFile  = document.getElementById('btn-delete-file');
-  const btnRenameFile  = document.getElementById('btn-rename-file');
+  const btnSave = document.getElementById('btn-save');
+  const btnDeleteFile = document.getElementById('btn-delete-file');
+  const btnRenameFile = document.getElementById('btn-rename-file');
   const btnHistoryFile = document.getElementById('btn-history-file');
 
   // ── Submodules ───────────────────────────────────────────────────────────
@@ -51,7 +50,9 @@
     el.className = type;
     el.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { el.hidden = true; }, 3000);
+    toastTimer = setTimeout(() => {
+      el.hidden = true;
+    }, 3000);
   }
 
   // ── Status badge ─────────────────────────────────────────────────────────
@@ -59,7 +60,11 @@
     if (!currentSite) return;
     try {
       const st = await API.get(`/api/sites/${currentSite.id}/status`);
-      const n = (st.modified?.length || 0) + (st.created?.length || 0) + (st.not_added?.length || 0) + (st.deleted?.length || 0);
+      const n =
+        (st.modified?.length || 0) +
+        (st.created?.length || 0) +
+        (st.not_added?.length || 0) +
+        (st.deleted?.length || 0);
       if (n > 0) {
         statusBadge.textContent = `${n} unpublished`;
         statusBadge.className = 'status-badge warn';
@@ -73,6 +78,29 @@
       // silent — git status fails if repo not cloned yet
     }
   }
+
+  // ── Update banner ────────────────────────────────────────────────────────
+  (async () => {
+    try {
+      const u = await API.get('/api/updates');
+      if (!u.enabled || !u.updateAvailable) return;
+      const dismissed = localStorage.getItem('updateDismissed');
+      if (dismissed === u.latest) return;
+      const banner = document.getElementById('update-banner');
+      document.getElementById('update-banner-text').textContent =
+        `11ty CMS ${u.latest} is available (you're on ${u.current}).`;
+      const link = document.getElementById('update-banner-link');
+      if (u.url) link.href = u.url;
+      else link.hidden = true;
+      document.getElementById('update-banner-dismiss').addEventListener('click', () => {
+        localStorage.setItem('updateDismissed', u.latest);
+        banner.hidden = true;
+      });
+      banner.hidden = false;
+    } catch {
+      // silent — update check is best-effort
+    }
+  })();
 
   // ── Boot ─────────────────────────────────────────────────────────────────
   try {
@@ -106,7 +134,7 @@
       return;
     }
 
-    currentSite = sites.find(s => s.id === id);
+    currentSite = sites.find((s) => s.id === id);
     editor.unload();
     currentFile = null;
     fileBrowser.clear();
@@ -170,7 +198,7 @@
     try {
       await API.put(`/api/sites/${currentSite.id}/files/${currentFile.path}`, {
         frontmatter: editor.collectFrontmatter(),
-        body: editor.getBody()
+        body: editor.getBody(),
       });
       editor.markClean();
       toast('Saved', 'ok');
@@ -185,7 +213,10 @@
 
   // Warn before closing with unsaved changes
   window.addEventListener('beforeunload', (e) => {
-    if (editor.isDirty) { e.preventDefault(); e.returnValue = ''; }
+    if (editor.isDirty) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
   });
 
   // ── Delete file ────────────────────────────────────────────────────────────
@@ -217,7 +248,8 @@
       toast('Published! GitHub Actions will build shortly.', 'ok');
       statusBadge.hidden = true;
     } catch (err) {
-      toast('Publish failed: ' + err.message, 'error');
+      const msg = err.hint ? `Publish failed: ${err.hint}` : 'Publish failed: ' + err.message;
+      toast(msg, 'error');
       btnPublish.disabled = false;
     }
     btnPublish.textContent = 'Publish';
@@ -234,7 +266,7 @@
   // ── Sidebar search ─────────────────────────────────────────────────────────
   sidebarSearch.addEventListener('input', () => {
     const q = sidebarSearch.value.trim().toLowerCase();
-    fileBrowser.render(q ? allFiles.filter(p => p.toLowerCase().includes(q)) : allFiles);
+    fileBrowser.render(q ? allFiles.filter((p) => p.toLowerCase().includes(q)) : allFiles);
   });
 
   // ── Logout ─────────────────────────────────────────────────────────────────
@@ -251,7 +283,9 @@
     setTimeout(() => newFilePath.focus(), 50);
   });
 
-  function closeNewFileModal() { modalNewFile.hidden = true; }
+  function closeNewFileModal() {
+    modalNewFile.hidden = true;
+  }
   btnCloseNew.addEventListener('click', closeNewFileModal);
   newFileBackdrop.addEventListener('click', closeNewFileModal);
 
@@ -262,18 +296,29 @@
 
   btnCreateFile.addEventListener('click', async () => {
     const p = newFilePath.value.trim();
-    if (!p) { newFileError.textContent = 'Enter a file path'; return; }
+    if (!p) {
+      newFileError.textContent = 'Enter a file path';
+      return;
+    }
     if (!currentSite) return;
 
     // Default frontmatter for new md files, merged with site defaults
     const isMd = p.endsWith('.md');
-    const title = p.split('/').pop().replace(/\.\w+$/, '').replace(/[-_]/g, ' ')
-      .replace(/\b\w/g, c => c.toUpperCase());
+    const title = p
+      .split('/')
+      .pop()
+      .replace(/\.\w+$/, '')
+      .replace(/[-_]/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
     const defs = currentSite.frontmatterDefaults || {};
     const folder = p.includes('/') ? p.split('/')[0] : '';
     const siteDefs = { ...(defs[''] || {}), ...(defs[folder] || {}) };
     const frontmatter = isMd
-      ? { layout: 'base.njk', ...siteDefs, title: siteDefs.title !== undefined ? siteDefs.title : title }
+      ? {
+          layout: 'base.njk',
+          ...siteDefs,
+          title: siteDefs.title !== undefined ? siteDefs.title : title,
+        }
       : { ...siteDefs };
 
     newFileError.textContent = '';
@@ -281,7 +326,7 @@
       await API.post(`/api/sites/${currentSite.id}/files`, {
         path: p,
         frontmatter,
-        body: ''
+        body: '',
       });
       closeNewFileModal();
       const files = await API.get(`/api/sites/${currentSite.id}/files`);
@@ -372,44 +417,56 @@
   document.addEventListener('editor:dirty', () => {});
 
   // ── Rename file modal ──────────────────────────────────────────────────────
-  const modalRename      = document.getElementById('modal-rename');
-  const renameFilePath   = document.getElementById('rename-file-path');
-  const renameError      = document.getElementById('rename-error');
+  const modalRename = document.getElementById('modal-rename');
+  const renameFilePath = document.getElementById('rename-file-path');
+  const renameError = document.getElementById('rename-error');
   const btnConfirmRename = document.getElementById('btn-confirm-rename');
 
-  document.getElementById('btn-close-rename').addEventListener('click', () => { modalRename.hidden = true; });
-  document.getElementById('rename-backdrop').addEventListener('click', () => { modalRename.hidden = true; });
+  document.getElementById('btn-close-rename').addEventListener('click', () => {
+    modalRename.hidden = true;
+  });
+  document.getElementById('rename-backdrop').addEventListener('click', () => {
+    modalRename.hidden = true;
+  });
 
   btnRenameFile.addEventListener('click', () => {
     if (!currentFile) return;
     renameFilePath.value = currentFile.path;
     renameError.textContent = '';
     modalRename.hidden = false;
-    setTimeout(() => { renameFilePath.focus(); renameFilePath.select(); }, 50);
+    setTimeout(() => {
+      renameFilePath.focus();
+      renameFilePath.select();
+    }, 50);
   });
 
   renameFilePath.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') btnConfirmRename.click();
-    if (e.key === 'Escape') { modalRename.hidden = true; }
+    if (e.key === 'Escape') {
+      modalRename.hidden = true;
+    }
   });
 
   btnConfirmRename.addEventListener('click', async () => {
     const newPath = renameFilePath.value.trim();
     if (!newPath || !currentFile || !currentSite) return;
-    if (newPath === currentFile.path) { modalRename.hidden = true; return; }
+    if (newPath === currentFile.path) {
+      modalRename.hidden = true;
+      return;
+    }
     renameError.textContent = '';
     btnConfirmRename.disabled = true;
     try {
       await API.post(`/api/sites/${currentSite.id}/files-rename`, {
         from: currentFile.path,
-        to:   newPath
+        to: newPath,
       });
       modalRename.hidden = true;
       const oldPath = currentFile.path;
       currentFile.path = newPath;
       document.getElementById('current-file-name').textContent = newPath;
       // Update sidebar
-      allFiles = allFiles.map(p => p === oldPath ? newPath : p);
+      allFiles = allFiles.map((p) => (p === oldPath ? newPath : p));
       fileBrowser.render(allFiles);
       fileBrowser.setActive(newPath);
       toast('Renamed', 'ok');
@@ -421,12 +478,16 @@
   });
 
   // ── File history modal ─────────────────────────────────────────────────────
-  const modalHistory  = document.getElementById('modal-history');
-  const historyList   = document.getElementById('history-list');
+  const modalHistory = document.getElementById('modal-history');
+  const historyList = document.getElementById('history-list');
   const historyFileName = document.getElementById('history-file-name');
 
-  document.getElementById('btn-close-history').addEventListener('click', () => { modalHistory.hidden = true; });
-  document.getElementById('history-backdrop').addEventListener('click', () => { modalHistory.hidden = true; });
+  document.getElementById('btn-close-history').addEventListener('click', () => {
+    modalHistory.hidden = true;
+  });
+  document.getElementById('history-backdrop').addEventListener('click', () => {
+    modalHistory.hidden = true;
+  });
 
   btnHistoryFile.addEventListener('click', async () => {
     if (!currentFile || !currentSite) return;
@@ -455,18 +516,18 @@
   });
 
   // ── Manage Sites modal ─────────────────────────────────────────────────────
-  const modalSites     = document.getElementById('modal-sites');
-  const btnCloseSites  = document.getElementById('btn-close-sites');
-  const sitesBackdrop  = document.getElementById('sites-backdrop');
-  const sitesList      = document.getElementById('sites-list');
-  const nsName         = document.getElementById('ns-name');
-  const nsRepo         = document.getElementById('ns-repo');
-  const nsContentDir   = document.getElementById('ns-contentdir');
-  const nsMediaDir     = document.getElementById('ns-mediadir');
-  const nsBranch       = document.getElementById('ns-branch');
-  const nsLiveUrl      = document.getElementById('ns-liveurl');
-  const btnAddSite     = document.getElementById('btn-add-site');
-  const addSiteStatus  = document.getElementById('add-site-status');
+  const modalSites = document.getElementById('modal-sites');
+  const btnCloseSites = document.getElementById('btn-close-sites');
+  const sitesBackdrop = document.getElementById('sites-backdrop');
+  const sitesList = document.getElementById('sites-list');
+  const nsName = document.getElementById('ns-name');
+  const nsRepo = document.getElementById('ns-repo');
+  const nsContentDir = document.getElementById('ns-contentdir');
+  const nsMediaDir = document.getElementById('ns-mediadir');
+  const nsBranch = document.getElementById('ns-branch');
+  const nsLiveUrl = document.getElementById('ns-liveurl');
+  const btnAddSite = document.getElementById('btn-add-site');
+  const addSiteStatus = document.getElementById('add-site-status');
 
   btnManageSites.addEventListener('click', openSitesModal);
   btnCloseSites.addEventListener('click', closeSitesModal);
@@ -479,12 +540,18 @@
     await renderSitesList();
   }
 
-  function closeSitesModal() { modalSites.hidden = true; }
+  function closeSitesModal() {
+    modalSites.hidden = true;
+  }
 
   async function renderSitesList() {
     sitesList.innerHTML = '';
     let allSites;
-    try { allSites = await API.get('/api/sites'); } catch { return; }
+    try {
+      allSites = await API.get('/api/sites');
+    } catch {
+      return;
+    }
 
     if (allSites.length === 0) {
       sitesList.innerHTML = '<p class="sites-empty">No sites registered yet.</p>';
@@ -512,17 +579,22 @@
     }
 
     // Wire action buttons
-    sitesList.querySelectorAll('[data-action="remove"]').forEach(btn => {
+    sitesList.querySelectorAll('[data-action="remove"]').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const id = btn.dataset.id;
-        const site = allSites.find(s => s.id === id);
-        if (!confirm(`Remove "${site?.name}" from the CMS?\n\nThis only removes the config entry — the local clone and GitHub repo are untouched.`)) return;
+        const site = allSites.find((s) => s.id === id);
+        if (
+          !confirm(
+            `Remove "${site?.name}" from the CMS?\n\nThis only removes the config entry — the local clone and GitHub repo are untouched.`
+          )
+        )
+          return;
         try {
           await API.del(`/api/sites/${id}`);
           // Remove from header dropdown if present
           const opt = siteSelect.querySelector(`option[value="${id}"]`);
           if (opt) opt.remove();
-          sites = sites.filter(s => s.id !== id);
+          sites = sites.filter((s) => s.id !== id);
           if (currentSite?.id === id) {
             currentSite = null;
             fileBrowser.clear();
@@ -539,43 +611,56 @@
       });
     });
 
-    sitesList.querySelectorAll('[data-action="init"]').forEach(btn => {
+    sitesList.querySelectorAll('[data-action="init"]').forEach((btn) => {
       btn.addEventListener('click', () => initSite(btn.dataset.id, btn));
     });
 
-    sitesList.querySelectorAll('[data-action="defaults"]').forEach(btn => {
+    sitesList.querySelectorAll('[data-action="defaults"]').forEach((btn) => {
       btn.addEventListener('click', () => openDefaultsModal(btn.dataset.id));
     });
   }
 
   async function initSite(id, btn) {
-    if (btn) { btn.disabled = true; btn.textContent = 'Cloning…'; }
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Cloning…';
+    }
     try {
       const result = await API.post(`/api/sites/${id}/init`);
-      const wfMsg = result.workflowStatus === 'added'
-        ? ' GitHub Actions workflow written.'
-        : result.workflowStatus === 'existed'
-        ? ' Workflow already present.'
-        : '';
+      const wfMsg =
+        result.workflowStatus === 'added'
+          ? ' GitHub Actions workflow written.'
+          : result.workflowStatus === 'existed'
+            ? ' Workflow already present.'
+            : '';
       toast(`Cloned.${wfMsg}`, 'ok');
       await renderSitesList();
     } catch (err) {
       toast('Init failed: ' + err.message, 'error');
-      if (btn) { btn.disabled = false; btn.textContent = 'Clone'; }
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Clone';
+      }
     }
   }
 
   // Add site form
   btnAddSite.addEventListener('click', async () => {
-    const name       = nsName.value.trim();
-    const repo       = nsRepo.value.trim();
+    const name = nsName.value.trim();
+    const repo = nsRepo.value.trim();
     const contentDir = nsContentDir.value.trim() || 'src';
-    const mediaDir   = nsMediaDir.value.trim()   || 'src/images';
-    const branch     = nsBranch.value.trim()      || 'main';
-    const liveUrl    = nsLiveUrl.value.trim();
+    const mediaDir = nsMediaDir.value.trim() || 'src/images';
+    const branch = nsBranch.value.trim() || 'main';
+    const liveUrl = nsLiveUrl.value.trim();
 
-    if (!name) { nsName.focus(); return; }
-    if (!repo)  { nsRepo.focus(); return; }
+    if (!name) {
+      nsName.focus();
+      return;
+    }
+    if (!repo) {
+      nsRepo.focus();
+      return;
+    }
 
     btnAddSite.disabled = true;
     setAddStatus('Adding…', '');
@@ -600,11 +685,12 @@
 
     try {
       const result = await API.post(`/api/sites/${newSite.id}/init`);
-      const wfLine = result.workflowStatus === 'added'
-        ? '\nGitHub Actions workflow written — commit it with your next Publish.'
-        : result.workflowStatus === 'existed'
-        ? '\nWorkflow already present in repo.'
-        : '';
+      const wfLine =
+        result.workflowStatus === 'added'
+          ? '\nGitHub Actions workflow written — commit it with your next Publish.'
+          : result.workflowStatus === 'existed'
+            ? '\nWorkflow already present in repo.'
+            : '';
       setAddStatus(`✓ Cloned.${wfLine}`, 'ok');
     } catch (err) {
       setAddStatus(`Cloned failed: ${err.message}`, 'error');
@@ -614,9 +700,9 @@
     nsName.value = '';
     nsRepo.value = '';
     nsContentDir.value = 'src';
-    nsMediaDir.value   = 'src/images';
-    nsBranch.value     = 'main';
-    nsLiveUrl.value    = '';
+    nsMediaDir.value = 'src/images';
+    nsBranch.value = 'main';
+    nsLiveUrl.value = '';
     btnAddSite.disabled = false;
 
     await renderSitesList();
@@ -628,29 +714,35 @@
   }
 
   // ── Frontmatter Defaults modal ─────────────────────────────────────────────
-  const modalDefaults    = document.getElementById('modal-defaults');
+  const modalDefaults = document.getElementById('modal-defaults');
   const btnCloseDefaults = document.getElementById('btn-close-defaults');
   const defaultsBackdrop = document.getElementById('defaults-backdrop');
   const defaultsSiteName = document.getElementById('defaults-site-name');
-  const defaultsTemplates= document.getElementById('defaults-templates');
-  const btnAddTemplate   = document.getElementById('btn-add-template');
-  const btnAddSitewide   = document.getElementById('btn-add-sitewide');
-  const btnSaveDefaults  = document.getElementById('btn-save-defaults');
-  const defaultsStatus   = document.getElementById('defaults-status');
+  const defaultsTemplates = document.getElementById('defaults-templates');
+  const btnAddTemplate = document.getElementById('btn-add-template');
+  const btnAddSitewide = document.getElementById('btn-add-sitewide');
+  const btnSaveDefaults = document.getElementById('btn-save-defaults');
+  const defaultsStatus = document.getElementById('defaults-status');
   let defaultsSiteId = null;
 
-  btnCloseDefaults.addEventListener('click', () => { modalDefaults.hidden = true; });
-  defaultsBackdrop.addEventListener('click', () => { modalDefaults.hidden = true; });
+  btnCloseDefaults.addEventListener('click', () => {
+    modalDefaults.hidden = true;
+  });
+  defaultsBackdrop.addEventListener('click', () => {
+    modalDefaults.hidden = true;
+  });
 
   async function openDefaultsModal(siteId) {
     defaultsSiteId = siteId;
-    const siteObj = sites.find(s => s.id === siteId);
+    const siteObj = sites.find((s) => s.id === siteId);
     defaultsSiteName.textContent = siteObj?.name || siteId;
     defaultsStatus.textContent = '';
     defaultsTemplates.innerHTML = '<p style="color:var(--text-muted);font-size:12px">Loading…</p>';
     modalDefaults.hidden = false;
     let defs = {};
-    try { defs = await API.get(`/api/sites/${siteId}/defaults`); } catch {}
+    try {
+      defs = await API.get(`/api/sites/${siteId}/defaults`);
+    } catch {}
     renderDefaultsTemplates(defs);
   }
 
@@ -662,8 +754,9 @@
   }
 
   function hasSiteWide() {
-    return Array.from(defaultsTemplates.querySelectorAll('.defaults-folder-input'))
-      .some(inp => inp.value === '');
+    return Array.from(defaultsTemplates.querySelectorAll('.defaults-folder-input')).some(
+      (inp) => inp.value === ''
+    );
   }
 
   function buildTemplateSection(folder, fields) {
@@ -692,7 +785,8 @@
       inp.className = 'defaults-folder-input';
       inp.value = folder;
       inp.placeholder = 'folder name';
-      inp.style.cssText = 'background:var(--bg);border:1px solid var(--accent);border-radius:4px;color:var(--text);padding:3px 8px;font-family:var(--mono);font-size:12px;flex:1;min-width:60px;';
+      inp.style.cssText =
+        'background:var(--bg);border:1px solid var(--accent);border-radius:4px;color:var(--text);padding:3px 8px;font-family:var(--mono);font-size:12px;flex:1;min-width:60px;';
       const slash = document.createElement('span');
       slash.textContent = '/';
       slash.style.color = 'var(--text-muted)';
@@ -761,11 +855,11 @@
 
   function collectDefaults() {
     const result = {};
-    defaultsTemplates.querySelectorAll('.defaults-template').forEach(tmpl => {
+    defaultsTemplates.querySelectorAll('.defaults-template').forEach((tmpl) => {
       const folderInp = tmpl.querySelector('.defaults-folder-input');
       const folder = folderInp ? folderInp.value.trim().replace(/\/$/, '') : '';
       const fields = {};
-      tmpl.querySelectorAll('.defaults-field-row').forEach(row => {
+      tmpl.querySelectorAll('.defaults-field-row').forEach((row) => {
         const k = row.querySelector('.df-key').value.trim();
         const v = row.querySelector('.df-val').value.trim();
         if (!k) return;
@@ -777,7 +871,9 @@
           } else {
             fields[k] = v;
           }
-        } catch { fields[k] = v; }
+        } catch {
+          fields[k] = v;
+        }
       });
       result[folder] = fields;
     });
@@ -788,7 +884,10 @@
     defaultsTemplates.appendChild(buildTemplateSection('new-folder', {}));
     const newSection = defaultsTemplates.lastElementChild;
     const inp = newSection.querySelector('.defaults-folder-input[type="text"]');
-    if (inp) { inp.focus(); inp.select(); }
+    if (inp) {
+      inp.focus();
+      inp.select();
+    }
   });
 
   btnAddSitewide.addEventListener('click', () => {
@@ -806,15 +905,16 @@
     try {
       await API.put(`/api/sites/${defaultsSiteId}/defaults`, defs);
       // Update in-memory site objects so openFile picks up new defaults immediately
-      const idx = sites.findIndex(s => s.id === defaultsSiteId);
+      const idx = sites.findIndex((s) => s.id === defaultsSiteId);
       if (idx !== -1) sites[idx].frontmatterDefaults = defs;
       if (currentSite?.id === defaultsSiteId) currentSite.frontmatterDefaults = defs;
       defaultsStatus.textContent = '✓ Saved';
-      setTimeout(() => { defaultsStatus.textContent = ''; }, 2000);
+      setTimeout(() => {
+        defaultsStatus.textContent = '';
+      }, 2000);
     } catch (err) {
       defaultsStatus.textContent = 'Error: ' + err.message;
     }
     btnSaveDefaults.disabled = false;
   });
-
 })();

@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write   # needed to commit /docs back
+      contents: write # needed to commit /docs back
 
     steps:
       - uses: actions/checkout@v4

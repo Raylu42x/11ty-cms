@@ -12,8 +12,15 @@ class ContentEditor {
       autofocus: false,
       minHeight: '400px',
       toolbar: [
-        'bold', 'italic', 'heading-2', 'heading-3', '|',
-        'quote', 'unordered-list', 'ordered-list', '|',
+        'bold',
+        'italic',
+        'heading-2',
+        'heading-3',
+        '|',
+        'quote',
+        'unordered-list',
+        'ordered-list',
+        '|',
         'link',
         {
           name: 'image',
@@ -22,17 +29,21 @@ class ContentEditor {
           title: 'Insert image from media library',
         },
         '|',
-        'preview', 'side-by-side', 'fullscreen',
+        'preview',
+        'side-by-side',
+        'fullscreen',
       ],
       status: [
         {
           className: 'wordcount',
-          defaultValue: el => { el.innerHTML = '0 words'; },
-          onUpdate: el => {
+          defaultValue: (el) => {
+            el.innerHTML = '0 words';
+          },
+          onUpdate: (el) => {
             const val = this.mde.value();
             const n = val.trim() ? val.trim().split(/\s+/).length : 0;
             el.innerHTML = `${n.toLocaleString()} words`;
-          }
+          },
         },
         'lines',
         'cursor',
@@ -48,12 +59,14 @@ class ContentEditor {
   }
 
   _requestImagePicker() {
-    document.dispatchEvent(new CustomEvent('editor:pick-image', {
-      detail: (url, alt) => {
-        this.mde.codemirror.replaceSelection(`![${alt || ''}](${url})`);
-        this.mde.codemirror.focus();
-      }
-    }));
+    document.dispatchEvent(
+      new CustomEvent('editor:pick-image', {
+        detail: (url, alt) => {
+          this.mde.codemirror.replaceSelection(`![${alt || ''}](${url})`);
+          this.mde.codemirror.focus();
+        },
+      })
+    );
   }
 
   load(fileData, filePath) {
@@ -146,16 +159,27 @@ class ContentEditor {
     row.appendChild(newFieldUI);
     form.appendChild(row);
 
-    const keyInput    = newFieldUI.querySelector('.fm-new-key');
-    const typeSelect  = newFieldUI.querySelector('.fm-new-type');
-    const confirmBtn  = newFieldUI.querySelector('[data-action="confirm"]');
-    const cancelBtn   = newFieldUI.querySelector('[data-action="cancel"]');
+    const keyInput = newFieldUI.querySelector('.fm-new-key');
+    const typeSelect = newFieldUI.querySelector('.fm-new-type');
+    const confirmBtn = newFieldUI.querySelector('[data-action="confirm"]');
+    const cancelBtn = newFieldUI.querySelector('[data-action="cancel"]');
 
-    const open  = () => { addBtn.hidden = true;  newFieldUI.hidden = false; keyInput.focus(); };
-    const close = () => { addBtn.hidden = false; newFieldUI.hidden = true;  keyInput.value = ''; };
+    const open = () => {
+      addBtn.hidden = true;
+      newFieldUI.hidden = false;
+      keyInput.focus();
+    };
+    const close = () => {
+      addBtn.hidden = false;
+      newFieldUI.hidden = true;
+      keyInput.value = '';
+    };
     const doAdd = () => {
       const key = keyInput.value.trim();
-      if (!key) { keyInput.focus(); return; }
+      if (!key) {
+        keyInput.focus();
+        return;
+      }
       const defaults = { string: '', boolean: false, array: [], date: '', number: 0 };
       this._insertRow(form, key, defaults[typeSelect.value], typeSelect.value);
       close();
@@ -166,7 +190,7 @@ class ContentEditor {
     confirmBtn.addEventListener('click', doAdd);
     cancelBtn.addEventListener('click', close);
     keyInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter')  doAdd();
+      if (e.key === 'Enter') doAdd();
       if (e.key === 'Escape') close();
     });
   }
@@ -181,7 +205,7 @@ class ContentEditor {
     if (is('boolean') || (typeHint === null && typeof val === 'boolean')) {
       const el = document.createElement('input');
       el.type = 'checkbox';
-      el.dataset.fmKey  = key;
+      el.dataset.fmKey = key;
       el.dataset.fmType = 'boolean';
       el.checked = !!val;
       el.addEventListener('change', () => this._markDirty());
@@ -194,13 +218,20 @@ class ContentEditor {
     }
 
     // Date
-    if (is('date') || (typeHint === null && (val instanceof Date || this._looksLikeDate(key, val)))) {
+    if (
+      is('date') ||
+      (typeHint === null && (val instanceof Date || this._looksLikeDate(key, val)))
+    ) {
       const el = document.createElement('input');
       el.type = 'date';
-      el.dataset.fmKey  = key;
+      el.dataset.fmKey = key;
       el.dataset.fmType = 'date';
       const d = val instanceof Date ? val : new Date(val);
-      el.value = !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : (typeof val === 'string' ? val : '');
+      el.value = !isNaN(d.getTime())
+        ? d.toISOString().split('T')[0]
+        : typeof val === 'string'
+          ? val
+          : '';
       el.addEventListener('change', () => this._markDirty());
       return el;
     }
@@ -209,7 +240,7 @@ class ContentEditor {
     if (is('number') || (typeHint === null && typeof val === 'number')) {
       const el = document.createElement('input');
       el.type = 'number';
-      el.dataset.fmKey  = key;
+      el.dataset.fmKey = key;
       el.dataset.fmType = 'number';
       el.value = val ?? 0;
       el.addEventListener('input', () => this._markDirty());
@@ -219,7 +250,7 @@ class ContentEditor {
     // String (default)
     const el = document.createElement('input');
     el.type = 'text';
-    el.dataset.fmKey  = key;
+    el.dataset.fmKey = key;
     el.dataset.fmType = 'string';
     el.value = val != null ? String(val) : '';
     el.addEventListener('input', () => this._markDirty());
@@ -229,13 +260,13 @@ class ContentEditor {
   _looksLikeDate(key, val) {
     if (typeof val !== 'string') return false;
     const dateKeys = ['date', 'created', 'updated', 'published', 'modified'];
-    return dateKeys.some(k => key.toLowerCase().includes(k)) && /^\d{4}-\d{2}-\d{2}/.test(val);
+    return dateKeys.some((k) => key.toLowerCase().includes(k)) && /^\d{4}-\d{2}-\d{2}/.test(val);
   }
 
   _makeTagInput(key, tags) {
     const wrap = document.createElement('div');
     wrap.className = 'tag-input-wrap';
-    wrap.dataset.fmKey  = key;
+    wrap.dataset.fmKey = key;
     wrap.dataset.fmType = 'array';
 
     const inputEl = document.createElement('input');
@@ -253,7 +284,11 @@ class ContentEditor {
       rm.className = 'tag-chip-rm';
       rm.type = 'button';
       rm.textContent = '×';
-      rm.addEventListener('click', (e) => { e.stopPropagation(); chip.remove(); this._markDirty(); });
+      rm.addEventListener('click', (e) => {
+        e.stopPropagation();
+        chip.remove();
+        this._markDirty();
+      });
       chip.appendChild(rm);
       wrap.insertBefore(chip, inputEl);
     };
@@ -264,11 +299,18 @@ class ContentEditor {
       if (e.key === 'Enter' || e.key === ',') {
         e.preventDefault();
         const v = inputEl.value.trim().replace(/,$/, '');
-        if (v) { addChip(v); inputEl.value = ''; this._markDirty(); }
+        if (v) {
+          addChip(v);
+          inputEl.value = '';
+          this._markDirty();
+        }
       }
       if (e.key === 'Backspace' && !inputEl.value) {
         const last = wrap.querySelector('.tag-chip:last-of-type');
-        if (last) { last.remove(); this._markDirty(); }
+        if (last) {
+          last.remove();
+          this._markDirty();
+        }
       }
     });
     wrap.addEventListener('click', () => inputEl.focus());
@@ -285,18 +327,23 @@ class ContentEditor {
   collectFrontmatter() {
     const form = document.getElementById('frontmatter-form');
     const result = {};
-    form.querySelectorAll('[data-fm-key]').forEach(el => {
-      const key  = el.dataset.fmKey;
+    form.querySelectorAll('[data-fm-key]').forEach((el) => {
+      const key = el.dataset.fmKey;
       const type = el.dataset.fmType;
-      if (type === 'boolean')      result[key] = el.checked;
-      else if (type === 'array')   result[key] = [...el.querySelectorAll('.tag-chip')].map(c => c.dataset.tag);
-      else if (type === 'date')    result[key] = el.value || null;
-      else if (type === 'number')  result[key] = el.value !== '' ? Number(el.value) : null;
-      else                         result[key] = el.value;
+      if (type === 'boolean') result[key] = el.checked;
+      else if (type === 'array')
+        result[key] = [...el.querySelectorAll('.tag-chip')].map((c) => c.dataset.tag);
+      else if (type === 'date') result[key] = el.value || null;
+      else if (type === 'number') result[key] = el.value !== '' ? Number(el.value) : null;
+      else result[key] = el.value;
     });
     return result;
   }
 
-  getBody()    { return this.mde.value(); }
-  markClean()  { this.isDirty = false; }
+  getBody() {
+    return this.mde.value();
+  }
+  markClean() {
+    this.isDirty = false;
+  }
 }

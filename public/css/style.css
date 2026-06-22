@@ -580,6 +580,21 @@ input[type="checkbox"] {
 #toast.error  { border-color: var(--danger);  color: var(--danger);  }
 #toast.warn   { border-color: var(--warn);    color: var(--warn);    }
 
+/* ── Update banner ───────────────────────────────────────────────────────── */
+.update-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.update-banner[hidden] { display: none; }
+.update-banner a { color: var(--accent); text-decoration: none; }
+.update-banner a:hover { text-decoration: underline; }
+#update-banner-dismiss { margin-left: auto; }
+
 /* ── Manage Sites modal ──────────────────────────────────────────────────── */
 .modal-section-label {
   font-size: 11px;
