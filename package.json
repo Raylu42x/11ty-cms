@@ -1,6 +1,6 @@
 {
   "name": "11ty-cms",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Self-hosted CMS for 11ty sites on GitHub Pages",
   "main": "server/index.js",
   "scripts": {
