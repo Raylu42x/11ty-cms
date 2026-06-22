@@ -29,3 +29,7 @@ Out of scope:
 ## Supported versions
 
 Only the latest released version receives security fixes.
+
+## Known issues
+
+- **`js-yaml` quadratic-complexity DoS (moderate, [GHSA-h67p-54hq-rp68](https://github.com/advisories/GHSA-h67p-54hq-rp68))** — pulled in transitively via `gray-matter`. Only exploitable by writing malicious frontmatter, which requires being the authenticated admin. Since the admin already has full filesystem and git access by design, this self-attack is not a meaningful threat. Will be resolved when `gray-matter` updates its `js-yaml` pin.

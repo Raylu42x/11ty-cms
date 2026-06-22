@@ -2,8 +2,12 @@ node_modules/
 .env
 repos/
 config/sites.json
+config/admin.json
 *.log
 .DS_Store
+.idea/
+.vscode/
+Thumbs.db
 .playwright-mcp/
 aftertransfer.md
 plan.md

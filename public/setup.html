@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>11ty CMS — First-Run Setup</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <style>
+      html,
+      body {
+        overflow: auto !important;
+        height: auto !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-page">
+      <div class="login-card">
+        <h1 class="login-title">Welcome to 11ty CMS</h1>
+        <p class="login-sub">Create your admin password to get started.</p>
+
+        <form id="setup-form" autocomplete="on">
+          <div class="login-field">
+            <label class="form-label" for="password">New password</label>
+            <input
+              type="password"
+              id="password"
+              class="form-input"
+              autocomplete="new-password"
+              minlength="8"
+              required
+              autofocus
+            />
+          </div>
+          <div class="login-field">
+            <label class="form-label" for="confirm">Confirm password</label>
+            <input
+              type="password"
+              id="confirm"
+              class="form-input"
+              autocomplete="new-password"
+              minlength="8"
+              required
+            />
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%">
+            Create admin & sign in
+          </button>
+          <p id="setup-error" class="login-error"></p>
+          <p class="login-sub" style="margin-top: 16px; font-size: 12px; opacity: 0.7">
+            Minimum 8 characters. Stored as a bcrypt hash in <code>config/admin.json</code>.
+          </p>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      document.getElementById('setup-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('[type="submit"]');
+        const errEl = document.getElementById('setup-error');
+        const password = document.getElementById('password').value;
+        const confirm = document.getElementById('confirm').value;
+        errEl.textContent = '';
+
+        if (password !== confirm) {
+          errEl.textContent = 'Passwords do not match.';
+          return;
+        }
+        if (password.length < 8) {
+          errEl.textContent = 'Password must be at least 8 characters.';
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Creating…';
+
+        try {
+          const r = await fetch('/api/auth/setup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password }),
+          });
+          const data = await r.json();
+          if (r.ok) {
+            window.location.href = '/';
+          } else {
+            errEl.textContent = data.error || 'Setup failed';
+            btn.disabled = false;
+            btn.textContent = 'Create admin & sign in';
+          }
+        } catch {
+          errEl.textContent = 'Network error — is the server running?';
+          btn.disabled = false;
+          btn.textContent = 'Create admin & sign in';
+        }
+      });
+    </script>
+  </body>
+</html>

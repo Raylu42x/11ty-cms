@@ -6,6 +6,8 @@
 
 A self-hosted, Dockerized content management system for sites built with [Eleventy (11ty)](https://www.11ty.dev/) and hosted on GitHub Pages.
 
+![11ty CMS editing a post from the example site](./docs/screenshot.png)
+
 The CMS runs on your own VPS. It clones your site repos locally, lets you edit content through a clean web UI, then pushes changes back to GitHub — where a GitHub Actions workflow builds the 11ty site and deploys to GitHub Pages via `/docs`.
 
 > **Don't have an 11ty site yet?** Fork the [11ty-example-site](https://github.com/Raylu42x/11ty-example-site) starter and add it to the CMS to try everything end-to-end in a few minutes.
@@ -48,7 +50,7 @@ A prebuilt multi-arch image (`linux/amd64`, `linux/arm64`) is published to GHCR 
 ```bash
 mkdir -p repos config
 cp .env.example .env
-# Edit .env — set SESSION_SECRET, ADMIN_PASSWORD_HASH, GITHUB_TOKEN
+# Edit .env — set SESSION_SECRET and GITHUB_TOKEN
 
 docker run -d --name 11ty-cms \
   -p 3000:3000 \
@@ -69,33 +71,29 @@ cd 11ty-cms
 npm install
 
 cp .env.example .env
-# Edit .env — at minimum set SESSION_SECRET, ADMIN_PASSWORD_HASH, and GITHUB_TOKEN
+# Edit .env — at minimum set SESSION_SECRET and GITHUB_TOKEN
 
 npm run dev
-# Open http://localhost:3000
+# Open http://localhost:3000 — you'll be sent to /setup to create your admin password
 ```
 
-**Generate a password hash:**
-
-```bash
-node -e "require('bcrypt').hash('yourpassword', 12).then(console.log)"
-```
-
-Paste the output as `ADMIN_PASSWORD_HASH` in `.env`.
+On first visit, the CMS routes you to a one-time setup page to create the admin password. The hash is written to `config/admin.json` (gitignored). No CLI hash generation required.
 
 ---
 
 ## Environment Variables
 
-| Variable              | Required | Description                                                                        |
-| --------------------- | -------- | ---------------------------------------------------------------------------------- |
-| `PORT`                | No       | Port to listen on (default: `3000`)                                                |
-| `SESSION_SECRET`      | Yes      | Long random string — `openssl rand -hex 32`                                        |
-| `ADMIN_PASSWORD_HASH` | Yes      | bcrypt hash of your admin password                                                 |
-| `GITHUB_TOKEN`        | Yes      | GitHub PAT with `repo` and `workflow` scopes, used to push to your site repos      |
-| `GIT_USER_NAME`       | No       | Name on CMS commits (default: `CMS Bot`)                                           |
-| `GIT_USER_EMAIL`      | No       | Email on CMS commits                                                               |
-| `REPOS_DIR`           | No       | Where site repos are cloned. Defaults to `./repos/`. Docker sets this to `/repos`. |
+| Variable               | Required | Description                                                                                       |
+| ---------------------- | -------- | ------------------------------------------------------------------------------------------------- |
+| `PORT`                 | No       | Port to listen on (default: `3000`)                                                               |
+| `HOST`                 | No       | Interface to bind to (default: `127.0.0.1`). Set to `0.0.0.0` to expose to the network or Docker. |
+| `SESSION_SECRET`       | Yes      | Long random string — `openssl rand -hex 32`                                                       |
+| `ADMIN_PASSWORD_HASH`  | No       | Skip the setup wizard by providing a bcrypt hash here. Otherwise use `/setup` on first visit.     |
+| `GITHUB_TOKEN`         | Yes      | GitHub PAT with `repo` and `workflow` scopes, used to push to your site repos                     |
+| `GIT_USER_NAME`        | No       | Name on CMS commits (default: `CMS Bot`)                                                          |
+| `GIT_USER_EMAIL`       | No       | Email on CMS commits                                                                              |
+| `REPOS_DIR`            | No       | Where site repos are cloned. Defaults to `./repos/`. Docker sets this to `/repos`.                |
+| `UPDATE_CHECK_ENABLED` | No       | Set to `true` to enable a daily check for a newer release and show a banner.                      |
 
 ---
 
@@ -223,9 +221,58 @@ Field values support strings, numbers, booleans (`true`/`false`), and arrays (`[
 
 ## GitHub Token Permissions
 
-Create a token at **GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)**. Required scope: `repo` (full control of private repositories — needed to push commits).
+Create a token at **GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)**. Required scopes:
+
+- `repo` — full control of repositories (needed to push commits).
+- `workflow` — needed because the CMS creates and updates `.github/workflows/build.yml` in your site repos. Without this scope, the first publish will fail with `refusing to allow a Personal Access Token to create or update workflow without 'workflow' scope`.
 
 The token is stored only in your `.env` file on your VPS and injected into git remote URLs at push time. It is never logged or exposed to the browser.
+
+---
+
+## What 11ty CMS isn't
+
+To save everyone time:
+
+- **Not multi-user.** One admin per instance. No roles, teams, or per-user audit trail.
+- **Not a Decap / Tina / Netlify CMS replacement** if you publish to Netlify, Vercel, or similar hosted SSGs. It assumes GitHub Pages with a `/docs` build step.
+- **Not a WYSIWYG site builder.** You're editing markdown and frontmatter; templates and styles live in your 11ty repo.
+- **Not a database-backed CMS.** Git is the database. Every change is a commit.
+- **Not designed for non-11ty static sites.** Other SSGs may work if their structure is similar, but only 11ty is tested.
+
+---
+
+## Backup and Restore
+
+The CMS is stateless. Everything important lives elsewhere:
+
+- **Your content** is in the GitHub repos for each site. Nothing to back up — GitHub is your backup.
+- **Your CMS config** is in `config/sites.json` (which sites exist, frontmatter defaults) and `config/admin.json` (admin password hash). Both are in the bind-mounted `config/` directory.
+- **Cloned repos** in `repos/` are throw-away — the CMS re-clones from GitHub on demand.
+
+To migrate to a new VPS: copy `config/sites.json` and `config/admin.json`, copy your `.env`, run `docker compose up -d`. The CMS will re-clone repos from GitHub on first use of each site.
+
+---
+
+## FAQ
+
+**Can I use this with a non-11ty static site generator?**
+Probably not without code changes. The publish flow assumes 11ty's `src/` → `docs/` convention and writes an Eleventy-specific GitHub Actions workflow. If you're on Hugo / Astro / Jekyll, it's a fork-and-modify situation.
+
+**How do I add custom CSS or layouts to the editor preview?**
+You can't — the preview is EasyMDE's default markdown rendering, not your site's actual templates. To see how your site looks, click **Visit site ↗** after publishing. (A future version may render previews through your real 11ty config.)
+
+**Can I run this without Docker?**
+Yes — `npm install && npm start`. Bind it behind a reverse proxy (Caddy, nginx, Cloudflare Tunnel) and don't expose port 3000 directly to the internet.
+
+**My token has `repo` scope but publish still fails with `workflow` scope error.**
+GitHub treats `workflow` as a separate scope on top of `repo`. Regenerate the token with both checked. The CMS auto-creates `.github/workflows/build.yml` in your site repos, which requires `workflow`.
+
+**Where's the password I just set?**
+Bcrypt hash in `config/admin.json`. To reset: stop the container, delete `config/admin.json`, restart, visit `/setup` again.
+
+**Is it safe to expose this to the public internet?**
+With `HOST=0.0.0.0`, basic auth, rate-limited login, and a strong password — yes, but a reverse proxy with TLS (Cloudflare Tunnel or Caddy) is strongly recommended. The CMS does not provide TLS itself.
 
 ---
 

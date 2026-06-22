@@ -9,6 +9,8 @@ services:
       - ./repos:/repos
       - ./config:/app/config
     env_file: .env
+    environment:
+      HOST: 0.0.0.0
     restart: unless-stopped
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/healthz']

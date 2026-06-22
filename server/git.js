@@ -15,7 +15,7 @@ function getGit(siteId) {
 function buildRemoteUrl(repoUrl) {
   const token = process.env.GITHUB_TOKEN;
   if (!token) return repoUrl;
-  return repoUrl.replace('https://', `https://${token}@`);
+  return repoUrl.replace('https://', `https://x-access-token:${token}@`);
 }
 
 async function cloneOrPull(site) {

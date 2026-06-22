@@ -22,6 +22,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Boot-time warnings for missing `ADMIN_PASSWORD_HASH`, missing `GITHUB_TOKEN`, weak `SESSION_SECRET`, and in-memory session store in production
 - Publish-error hints surfaced in the UI for common failures (missing `workflow` scope, auth, repo not found, rebase conflict)
 - Optional update-check banner (`UPDATE_CHECK_ENABLED=true`) that pings GitHub once a day for a newer release
+- First-run `/setup` wizard to create the admin password in the browser. Hash is stored in `config/admin.json`.
+- Rate-limiting on `/api/auth/*` (20 attempts per 15 minutes)
+- README hero screenshot and new "What this isn't", "Backup and Restore", and "FAQ" sections
+
+### Changed
+
+- Default bind interface is now `127.0.0.1` (localhost only). Set `HOST=0.0.0.0` to expose. Docker images set this automatically.
+- Replaced `bcrypt` with `bcryptjs` (pure JS — no native build, no `tar` vulnerability, works cleanly on arm64)
+- Replaced `express-session` (in-memory) with `cookie-session` (signed cookie, survives restarts, no extra store needed)
+- Token-in-git-URL now uses the `https://x-access-token:TOKEN@github.com/...` form for broader compatibility
+
+### Fixed
+
+- Resolved 2 high-severity `tar` advisories by removing `@mapbox/node-pre-gyp` from the dep tree
 
 ## [1.0.0]
 
